@@ -1,40 +1,52 @@
 package com.Zinkworks.PersonalProjectURLShortener.controller;
 
-import com.Zinkworks.PersonalProjectURLShortener.dto.UrlRequest;
-import com.Zinkworks.PersonalProjectURLShortener.service.UrlService;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import org.springframework.cache.annotation.Cacheable;
+import com.Zinkworks.PersonalProjectURLShortener.dto.UrlDto;
+import com.Zinkworks.PersonalProjectURLShortener.exception.UrlError;
+import lombok.extern.slf4j.*;
+import org.apache.commons.validator.routines.UrlValidator;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @RestController
-@RequestMapping("/url")
+@RequestMapping(value = "/urlShortener")
 public class UrlController {
 
-    private final UrlService urlService;
+    @Autowired
+    private RedisTemplate<String, UrlDto> redisTemplate;
 
-    public UrlController(UrlService urlService){
-        this.urlService = urlService;
+    @Value("${redis.ttl}")
+    private long ttl;
+
+    @PostMapping
+    public ResponseEntity create(@RequestBody final String url){
+        final UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"});
+        if (!urlValidator.isValid(url)){
+            return ResponseEntity.badRequest().body(new UrlError("Invalid Url."));
+        }
+
+        final UrlDto urlDto = UrlDto.create(UUID.randomUUID(), url);
+        log.info("Short URl has been generated = {}", urlDto.getShortUrl());
+        redisTemplate.opsForValue().set(urlDto.getShortUrl(), urlDto, ttl, TimeUnit.SECONDS);
+        return ResponseEntity.noContent().header("ID", urlDto.getShortUrl()).build();
     }
 
-    @ApiOperation(value = "Converts a new Url that is entered", notes = "Shortens Url")
-    @PostMapping("convert-to-short")
-    public String shortenUrl(@RequestBody UrlRequest request){
-        return urlService.shortenUrl(request);
-    }
+    @GetMapping(value = "/{id}")
+    public ResponseEntity getSingleUrl(@PathVariable UUID id){
+        final UrlDto urlDto = redisTemplate.opsForValue().get(id);
+        if(Objects.isNull(urlDto)){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new UrlError("No such key exists."));
+        } else{
+            log.info("Url retrieved = {}", urlDto.getId());
+        }
 
-    @ApiOperation(value = "Redirect", notes = "finds original Url")
-    @GetMapping(value = "{shortUrl}")
-    @Cacheable(value = "urls", key = "#shorturl", sync = true)
-    public ResponseEntity<Void> getandRedirect(@PathVariable String shortUrl){
-        var url = urlService.getOriginalUrl(shortUrl);
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(url))
-                .build();
+        return  ResponseEntity.ok(urlDto);
     }
-
 }
