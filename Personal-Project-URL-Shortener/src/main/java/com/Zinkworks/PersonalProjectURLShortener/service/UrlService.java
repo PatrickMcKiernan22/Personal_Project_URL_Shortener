@@ -37,4 +37,7 @@ public class UrlService {
         Url result = urlRepository.getReferenceById(id);
         return result.getLongUrl();
     }
+
+    public void getUrls() {
+    }
 }

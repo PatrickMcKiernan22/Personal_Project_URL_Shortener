@@ -2,6 +2,7 @@ package com.Zinkworks.PersonalProjectURLShortener.controller;
 
 import com.Zinkworks.PersonalProjectURLShortener.service.UrlService;
 import com.Zinkworks.PersonalProjectURLShortener.repository.UrlRepository;
+import org.springframework.boot.autoconfigure.ldap.embedded.EmbeddedLdapProperties;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -28,5 +29,10 @@ public class UrlController {
     @RequestMapping(value = "/s/{id}", method = RequestMethod.GET)
     public void getSingleUrl(HttpServletResponse response, @PathVariable("id") String id) throws IOException {
        response.sendRedirect(urlService.getLongUrl(Long.valueOf(id)));
+    }
+
+    @RequestMapping(value = "/s/all", method = RequestMethod.GET)
+    public void getAllUrls(HttpServletResponse response){
+        return urlService.getUrls();
     }
 }
