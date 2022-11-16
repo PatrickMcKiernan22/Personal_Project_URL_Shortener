@@ -1,20 +1,25 @@
 package com.Zinkworks.PersonalProjectURLShortener.service;
 
+import com.Zinkworks.PersonalProjectURLShortener.dto.UrlDto;
+import com.Zinkworks.PersonalProjectURLShortener.exception.UrlsNotFoundException;
+import com.Zinkworks.PersonalProjectURLShortener.mapper.UrlMapper;
 import com.Zinkworks.PersonalProjectURLShortener.model.Url;
 import com.Zinkworks.PersonalProjectURLShortener.repository.UrlRepository;
+import com.google.common.hash.Hashing;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import static java.util.Objects.isNull;
 
 @Service
-public class UrlService {
+public class UrlService implements IUrlService{
 
+    @Autowired
     private UrlRepository urlRepository;
 
-    public UrlService(UrlRepository urlRepository) {
-        this.urlRepository = urlRepository;
-    }
 
     private String getRandomChars() {
         String random ="";
@@ -23,21 +28,34 @@ public class UrlService {
             random += usableChars.charAt((int) Math.floor(Math.random() * usableChars.length()));
         return random;
     }
+
     public String convertToShortUrl(Url url){
-            var entity = new Url();
-            String randomChar = getRandomChars();
-            entity.setShortUrl("http://localhost:8040/s/"+randomChar);
-            entity.setLongUrl(url.getLongUrl());
-            urlRepository.save(entity);
+        var entity = new Url();
+        String randomChar = getRandomChars();
+        entity.setShortUrl("http://localhost:8040/"+randomChar);
+        entity.setLongUrl(url.getLongUrl());
+        urlRepository.save(entity);
 
-            return entity.getShortUrl();
+        return entity.getShortUrl();
     }
 
-    public String getLongUrl(Long id) {
-        Url result = urlRepository.getReferenceById(id);
-        return result.getLongUrl();
+    @Override
+    public String findShortUrl(String url) {
+        return urlRepository.getByShortUrl(url);
     }
 
-    public void getUrls() {
+    public List<Url> getUrls() {
+       return urlRepository.findAll();
+    }
+
+    public void deleteUrls() throws UrlsNotFoundException {
+        if(urlRepository.findAll().isEmpty()){
+            throw new UrlsNotFoundException("Cannot Delete urls - Empty set");
+        }
+        urlRepository.deleteAll();
+    }
+
+    public String findLongUrl(String shortUrl) {
+        return urlRepository.getByLongUrl(shortUrl);
     }
 }

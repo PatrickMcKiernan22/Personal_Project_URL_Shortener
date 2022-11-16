@@ -1,51 +1,43 @@
 package com.Zinkworks.PersonalProjectURLShortener.model;
 
+
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Type;
+
 import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "Url")
+@Getter
+@Setter
+@ToString
+@Builder
+@AllArgsConstructor
 public class Url {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long urlId;
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "urlId", updatable = false, nullable = false)
+    @Type(type = "org.hibernate.type.UUIDCharType")
+    private UUID urlId;
 
-    @Column(name = "shortUrl")
+    @Column(name = "short_Url")
     private String shortUrl;
 
-    @Column(name = "longUrl")
+    @Column(name = "long_Url", updatable = true, nullable = false)
     private String longUrl;
 
-    public Url(long urlId, String shortUrl, String longUrl) {
-        this.urlId = urlId;
-        this.shortUrl = shortUrl;
-        this.longUrl = longUrl;
+
+    @CreationTimestamp
+    @Column(name = "createdOn", updatable = false, nullable = false)
+    private LocalDateTime createdOn;
+
+    public Url() {
     }
 
-    public Url(){}
-
-    public String getShortUrl() {
-        return shortUrl;
-    }
-
-    public void setShortUrl(String shortUrl) {
-        this.shortUrl = shortUrl;
-    }
-
-    public String getLongUrl() {
-        return longUrl;
-    }
-
-    public void setLongUrl(String longUrl) {
-        this.longUrl = longUrl;
-    }
-
-    public long getUrlId() {
-        return urlId;
-    }
-
-    @Override
-    public String toString() {
-        return "Url [shortUrl=" + shortUrl + ", longUrl=" + longUrl + "]";
-    }
 }
