@@ -32,7 +32,7 @@ public class UrlService implements IUrlService{
     public String convertToShortUrl(Url url){
         var entity = new Url();
         String randomChar = getRandomChars();
-        entity.setShortUrl("http://localhost:8040/"+randomChar);
+        entity.setShortUrl(randomChar);
         entity.setLongUrl(url.getLongUrl());
         urlRepository.save(entity);
 
